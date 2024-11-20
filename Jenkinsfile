@@ -2,62 +2,60 @@ pipeline {
     agent any
 
     environment {
-        DOCKER_COMPOSE_FILE = 'docker-compose.yml'
-        FLASK_APP_URL = 'http://localhost:5000/alunos'
+        // Define o nome do repositório para logging e configurações futuras
+        REPO_URL = 'https://github.com/GuilhermeGaffuri/devOpsTrabalho'
     }
 
     stages {
-        stage('Stop Existing Environment') {
+        // Etapa 1: Clonar o código do Git
+        stage('Checkout Code') {
             steps {
-                script {
-                    echo "=== Derrubando containers existentes, se houver ==="
-                    
-                    // Garante que nenhum container antigo cause conflito
-                    sh '''
-                    if [ -f ${DOCKER_COMPOSE_FILE} ]; then
-                        echo "Arquivo docker-compose encontrado. Parando containers..."
-                        docker-compose down || true
-                    else
-                        echo "Arquivo docker-compose não encontrado. Nenhuma ação necessária."
-                    fi
-                    '''
-                }
-            }
-        }
-        stage('Checkout') {
-            steps {
-                echo "=== Iniciando o checkout do repositório ==="
+                echo 'Clonando o repositório do GitHub...'
                 checkout scm
             }
         }
-        stage('Build') {
+
+        // Etapa 2: Instalar dependências
+        stage('Install Dependencies') {
             steps {
-                echo "=== Construindo os containers ==="
-                sh 'docker-compose build'
+                echo 'Instalando dependências com pip...'
+                sh '''
+                python3 -m venv venv
+                source venv/bin/activate
+                pip install -r requirements.txt
+                '''
             }
         }
-        stage('Run Containers') {
-            steps {
-                echo "=== Iniciando os containers ==="
-                sh 'docker-compose up -d'
-            }
-        }
+
+        // Etapa 3: Rodar os testes automatizados
         stage('Run Tests') {
             steps {
-                echo "=== Executando os testes ==="
-
-                // Aguarda até que o Flask esteja disponível
+                echo 'Executando testes automatizados...'
                 sh '''
-                for i in {1..10}; do
-                    curl --silent --fail ${FLASK_APP_URL} && break || echo "Aguardando o Flask estar disponível..."
-                    sleep 5
-                done
+                source venv/bin/activate
+                python3 -m unittest discover -s tests
                 '''
+            }
+        }
 
-                // Executa o arquivo de teste
+        // Etapa 4: Build e Deploy com Docker
+        stage('Build and Deploy') {
+            steps {
+                echo 'Construindo imagens Docker e executando containers...'
                 sh '''
-                python3 -m pip install --no-cache-dir requests
-                python3 test_app.py
+                docker-compose down
+                docker-compose build
+                docker-compose up -d
+                '''
+            }
+        }
+
+        // Etapa 5: Verificar monitoramento
+        stage('Verify Monitoring') {
+            steps {
+                echo 'Validando se o serviço está ativo...'
+                sh '''
+                curl -f http://localhost:5000/ || exit 1
                 '''
             }
         }
@@ -65,14 +63,17 @@ pipeline {
 
     post {
         always {
-            echo "=== Derrubando todos os containers ==="
-            sh 'docker-compose down'
+            echo 'Pipeline concluída, limpando arquivos temporários...'
+            sh '''
+            docker-compose down
+            rm -rf venv
+            '''
         }
         success {
-            echo "Pipeline executado com sucesso!"
+            echo 'Pipeline executada com sucesso!'
         }
         failure {
-            echo "Falha no pipeline. Verifique os logs."
+            echo 'Pipeline falhou. Verifique os logs no Console Output.'
         }
     }
 }
