@@ -1,3 +1,5 @@
+#!/bin/bash
+
 pipeline {
     agent any
 
@@ -21,7 +23,7 @@ pipeline {
                 echo 'Instalando dependências com pip...'
                 sh '''
                 python3 -m venv venv
-                source venv/bin/activate
+                . venv/bin/activate
                 pip install -r requirements.txt
                 '''
             }
@@ -32,7 +34,7 @@ pipeline {
             steps {
                 echo 'Executando testes automatizados...'
                 sh '''
-                source venv/bin/activate
+                . venv/bin/activate
                 python3 -m unittest discover -s tests
                 '''
             }
