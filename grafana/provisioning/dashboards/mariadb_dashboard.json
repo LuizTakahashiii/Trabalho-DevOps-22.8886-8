@@ -1,0 +1,17 @@
+{
+  "dashboard": {
+    "title": "MariaDB Metrics",
+    "panels": [
+      {
+        "type": "graph",
+        "title": "Connections",
+        "targets": [
+          {
+            "expr": "mysql_global_status_connections"
+          }
+        ]
+      }
+    ]
+  },
+  "overwrite": true
+}
