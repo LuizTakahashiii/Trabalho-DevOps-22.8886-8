@@ -2,7 +2,8 @@ version: '3.7'
 
 services:
   flask:
-    build:
+    container_name: flask-container
+    build: 
       context: ./flask
       dockerfile: Dockerfile_flask
     ports:
@@ -40,7 +41,7 @@ services:
     ports:
       - "9104:9104"
     environment:
-      DATA_SOURCE_NAME: "flask_user:flask_password@(mariadb:3306)/school_db"
+      DATA_SOURCE_NAME: "user:password@(mariadb:3306)/"
     depends_on:
       - mariadb
 
@@ -52,6 +53,6 @@ services:
       - "3000:3000"
     depends_on:
       - prometheus
-    volumes:
-      - ./grafana/provisioning:/etc/grafana/provisioning
-      - ./grafana/dashboards:/var/lib/grafana/dashboards
+    # volumes:
+    #   - ./grafana/provisioning:/etc/grafana/provisioning
+    #   - ./grafana/dashboards:/var/lib/grafana/dashboards
