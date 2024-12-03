@@ -1,15 +1,20 @@
 global:
-  scrape_interval: 15s  # Intervalo padrão de coleta de métricas para todos os jobs
+  scrape_interval: 10s  # Intervalo padrão de coleta de métricas
+  evaluation_interval: 5s  # Intervalo padrão para avaliação de regras
 
 scrape_configs:
-  - job_name: 'prometheus'  # Nome do job para o Prometheus
+  # Monitoramento do próprio Prometheus
+  - job_name: 'prometheus'
     static_configs:
-      - targets: ['localhost:9090']  # Definição do alvo, neste caso o próprio Prometheus
+      - targets: ['localhost:9090']
 
-  - job_name: 'mysqld_exporter'  # Nome do job para o MySQL Exporter
+  # Monitoramento do MySQL Exporter
+  - job_name: 'mysqld_exporter'
     static_configs:
-      - targets: ['mysqld-exporter:9104']  # Definição do alvo para coletar métricas do MySQL Exporter
+      - targets: ['mysqld_exporter:9104']  # Nome corrigido para corresponder ao serviço no docker-compose
 
-  - job_name: 'flask_app_exporter'  # Nome do job para o Flask Exporter
+  # Monitoramento da aplicação Flask
+  - job_name: 'flask_app_exporter'
     static_configs:
-      - targets: ['flask-container:5000']  # Definição do alvo para coletar métricas do Flask Exporter
+      - targets: ['flask-container:5000']
+

@@ -29,17 +29,24 @@ pipeline {
         stage('Testar Aplicação') {
             steps {
                 echo '=== Executando testes ==='
-                 script {
+                script {
                     // Subir os serviços necessários para os testes
                     sh '''
                     docker-compose up -d mariadb flask
-                    sleep 10  # Aguarda a inicialização dos serviços
+                    echo "Aguardando inicialização dos serviços..."
+                    sleep 15  # Aguarda a inicialização dos serviços
                     '''
-                    //sh 'docker ps -qf "name=flask_mariadb-flask"'
-                    // Executar testes dentro do container Flask
+
+                    // Verificar se os serviços estão rodando
+                    sh '''
+                    docker ps -qf "name=mariadb" || (echo "MariaDB não está rodando!" && exit 1)
+                    docker ps -qf "name=flask-container" || (echo "Flask não está rodando!" && exit 1)
+                    '''
+
+                    // Executar os testes no contêiner Flask
                     sh '''
                     docker exec $(docker ps -qf "name=flask-container") \
-                    python /app/tests/test_cadastrar_aluno.py
+                    pytest /app/tests --junitxml=/app/tests/report.xml
                     '''
 
                     // Derrubar os serviços após os testes
@@ -51,14 +58,14 @@ pipeline {
         stage('Deploy Application') {
             steps {
                 echo '=== Realizando deploy da aplicação ==='
-                sh 'docker-compose up --build'  // Subir os containers da aplicação em modo detach
+                sh 'docker-compose up --build -d'  // Subir os containers da aplicação em modo detach
             }
         }
     }
 
     post {
         always {
-            echo '=== Pipeline executada com sucesso! ==='
+            echo '=== Pipeline executada ==='
             echo 'Acesse os serviços pelos links abaixo:'
             echo 'Grafana: http://localhost:3000'
             echo 'Prometheus: http://localhost:9090'

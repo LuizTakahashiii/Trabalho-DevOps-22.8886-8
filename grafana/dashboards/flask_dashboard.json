@@ -1,115 +1,158 @@
 {
-    "uid": "flask_dashboard",
-    "title": "Dashboard da aplicação Flask",
-    "tags": ["Flask", "HTTP Requests"],
-    "timezone": "browser",
-    "schemaVersion": 16,
-    "version": 1,
-    "panels": [
-      {
-        "type": "graph",
-        "title": "HTTP Requests Rate",
-        "datasource": "Prometheus",
-        "gridPos": {
-          "x": 0,
-          "y": 0,
-          "w": 24,
-          "h": 10
-        },
-        "targets": [
-          {
-            "expr": "sum(rate(flask_http_request_duration_seconds_count{job=\"flask_app_exporter\"}[1m])) by (method, status)",
-            "legendFormat": "{{method}} {{status}}",
-            "refId": "A"
-          }
-        ],
-        "xaxis": {
-          "show": true,
-          "mode": "time"
-        },
-        "yaxes": [
-          {
-            "format": "short",
-            "show": true,
-            "label": "Requests per Second"
-          },
-          {
-            "show": true
-          }
-        ],
-        "lines": true,
-        "fill": 1,
-        "linewidth": 1,
-        "points": false,
-        "pointradius": 2,
-        "stack": false,
-        "legend": {
-          "show": true,
-          "values": false,
-          "min": false,
-          "max": false,
-          "avg": false,
-          "current": false,
-          "total": false,
-          "alignAsTable": false
+  "uid": "flask_dashboard",
+  "title": "Dashboard Flask Application - Melhorado",
+  "tags": ["Flask", "HTTP Requests", "MariaDB"],
+  "timezone": "browser",
+  "schemaVersion": 16,
+  "version": 2,
+  "panels": [
+    {
+      "type": "time-series",
+      "title": "Taxa de Requisições HTTP",
+      "datasource": "Prometheus",
+      "gridPos": { "x": 0, "y": 0, "w": 12, "h": 8 },
+      "targets": [
+        {
+          "expr": "sum(rate(flask_http_request_duration_seconds_count{job=\"flask_app_exporter\"}[30s])) by (method, status)",
+          "legendFormat": "{{method}} {{status}}",
+          "refId": "A"
         }
+      ],
+      "options": {
+        "legend": { "displayMode": "table", "placement": "bottom" },
+        "tooltip": { "mode": "single" }
       },
-      {
-        "type": "graph",
-        "title": "MariaDB Queries Rate",
-        "datasource": "Prometheus",
-        "gridPos": {
-          "x": 0,
-          "y": 10,
-          "w": 24,
-          "h": 10
-        },
-        "targets": [
-          {
-            "expr": "mariadb_queries",
-            "format": "status",
-            "interval": "",
-            "intervalFactor": 1,
-            "legendFormat": "Queries",
-            "refId": "B"
-          }
-        ],
-        "xaxis": {
-          "show": true,
-          "mode": "time"
-        },
-        "yaxes": [
-          {
-            "format": "short",
-            "show": true,
-            "label": "Queries per Second"
-          },
-          {
-            "show": true
-          }
-        ],
-        "lines": true,
-        "fill": 1,
-        "linewidth": 1,
-        "points": false,
-        "pointradius": 2,
-        "stack": false,
-        "legend": {
-          "show": true,
-          "values": false,
-          "min": false,
-          "max": false,
-          "avg": false,
-          "current": false,
-          "total": false,
-          "alignAsTable": false
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps",
+          "decimals": 2
         }
       }
-    ],
-    "templating": {
-      "list": []
     },
-    "annotations": {
-      "list": []
+    {
+      "type": "time-series",
+      "title": "Taxa de Consultas MariaDB",
+      "datasource": "Prometheus",
+      "gridPos": { "x": 12, "y": 0, "w": 12, "h": 8 },
+      "targets": [
+        {
+          "expr": "rate(mariadb_queries_total[30s])",
+          "legendFormat": "Consultas/s",
+          "refId": "B"
+        }
+      ],
+      "options": {
+        "legend": { "displayMode": "table", "placement": "bottom" },
+        "tooltip": { "mode": "single" }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "qps",
+          "decimals": 2
+        }
+      }
+    },
+    {
+      "type": "gauge",
+      "title": "Status do Flask",
+      "datasource": "Prometheus",
+      "gridPos": { "x": 0, "y": 8, "w": 6, "h": 6 },
+      "targets": [
+        {
+          "expr": "up{job=\"flask_app_exporter\"}",
+          "legendFormat": "Flask Status",
+          "refId": "C"
+        }
+      ],
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"] },
+        "showThresholdLabels": true,
+        "showThresholdMarkers": true
+      },
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red", "value": 0 },
+              { "color": "green", "value": 1 }
+            ]
+          },
+          "unit": "none"
+        }
+      }
+    },
+    {
+      "type": "stat",
+      "title": "Erros HTTP Recentes",
+      "datasource": "Prometheus",
+      "gridPos": { "x": 6, "y": 8, "w": 6, "h": 6 },
+      "targets": [
+        {
+          "expr": "sum(rate(flask_http_request_duration_seconds_count{status=~\"5..\",job=\"flask_app_exporter\"}[30s]))",
+          "legendFormat": "Erros",
+          "refId": "D"
+        }
+      ],
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"] },
+        "colorMode": "value",
+        "textMode": "value"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": 0 },
+              { "color": "yellow", "value": 1 },
+              { "color": "red", "value": 10 }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "type": "heatmap",
+      "title": "Mapa de Calor de Requisições HTTP",
+      "datasource": "Prometheus",
+      "gridPos": { "x": 0, "y": 14, "w": 12, "h": 8 },
+      "targets": [
+        {
+          "expr": "rate(flask_http_request_duration_seconds_count{job=\"flask_app_exporter\"}[30s])",
+          "legendFormat": "{{method}}",
+          "refId": "E"
+        }
+      ],
+      "options": {
+        "color": { "mode": "spectrum" },
+        "xAxis": { "show": true },
+        "yAxis": { "show": true }
+      }
+    },
+    {
+      "type": "table",
+      "title": "Requisições HTTP por Status",
+      "datasource": "Prometheus",
+      "gridPos": { "x": 12, "y": 14, "w": 12, "h": 8 },
+      "targets": [
+        {
+          "expr": "sum by (status) (rate(flask_http_request_duration_seconds_count{job=\"flask_app_exporter\"}[30s]))",
+          "legendFormat": "Status {{status}}",
+          "refId": "F"
+        }
+      ],
+      "options": {
+        "showHeader": true,
+        "wrapCellContent": true
+      }
     }
+  ],
+  "templating": {
+    "list": []
+  },
+  "annotations": {
+    "list": []
   }
+}

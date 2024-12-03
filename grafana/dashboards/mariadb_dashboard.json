@@ -1,51 +1,165 @@
 {
-  "uid": "simple_dashboard",
-  "title": "Monitoramento Flask",
-  "tags": ["Mariadb"],
-  "timezone": "browser",
+  "uid": "custom_http_dashboard",
+  "title": "Monitoramento HTTP - Avançado",
+  "tags": ["HTTP", "Dashboard", "Performance"],
+  "timezone": "utc",
   "schemaVersion": 16,
   "version": 1,
   "panels": [
     {
-      "type": "graph",
-      "title": "Prometheus",
+      "type": "time-series",
+      "title": "Requisições por Segundo (RPS)",
       "datasource": "Prometheus",
-      "gridPos": {
-        "x": 0,
-        "y": 0,
-        "w": 24,
-        "h": 10
-      },
+      "gridPos": { "x": 0, "y": 0, "w": 12, "h": 6 },
       "targets": [
         {
-          "expr": "up",
-          "legendFormat": "Node {{instance}}",
+          "expr": "sum(rate(http_requests_total[30s]))",
+          "legendFormat": "RPS",
           "refId": "A"
         }
       ],
-      "xaxis": {
-        "show": true
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "right"
+        }
       },
-      "yaxes": [
+      "lines": true,
+      "linewidth": 1,
+      "fill": 1
+    },
+    {
+      "type": "time-series",
+      "title": "Latência (95º Percentil)",
+      "datasource": "Prometheus",
+      "gridPos": { "x": 12, "y": 0, "w": 12, "h": 6 },
+      "targets": [
         {
-          "format": "short",
-          "show": true
-        },
-        {
-          "show": true
+          "expr": "histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[30s]))",
+          "legendFormat": "P95 Latência",
+          "refId": "B"
         }
       ],
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        }
+      },
       "lines": true,
-      "fill": 1,
       "linewidth": 2,
-      "points": false,
-      "pointradius": 2
+      "fill": 2
+    },
+    {
+      "type": "gauge",
+      "title": "Taxa de Erros HTTP",
+      "datasource": "Prometheus",
+      "gridPos": { "x": 0, "y": 6, "w": 6, "h": 6 },
+      "targets": [
+        {
+          "expr": "sum(rate(http_requests_total{status=~\"5..\"}[30s]))",
+          "legendFormat": "Erros 5xx",
+          "refId": "C"
+        }
+      ],
+      "options": {
+        "reduceOptions": {
+          "calcs": ["lastNotNull"],
+          "fields": "",
+          "values": true
+        },
+        "showThresholdLabels": true
+      }
+    },
+    {
+      "type": "stat",
+      "title": "Requisições Ativas",
+      "datasource": "Prometheus",
+      "gridPos": { "x": 6, "y": 6, "w": 6, "h": 6 },
+      "targets": [
+        {
+          "expr": "http_in_progress_requests",
+          "legendFormat": "Ativas",
+          "refId": "D"
+        }
+      ],
+      "options": {
+        "reduceOptions": {
+          "calcs": ["max"],
+          "fields": "",
+          "values": true
+        }
+      }
+    },
+    {
+      "type": "barchart",
+      "title": "Distribuição de Requisições por Status HTTP",
+      "datasource": "Prometheus",
+      "gridPos": { "x": 0, "y": 12, "w": 12, "h": 6 },
+      "targets": [
+        {
+          "expr": "sum by (status) (rate(http_requests_total[1m]))",
+          "legendFormat": "Status {{status}}",
+          "refId": "E"
+        }
+      ],
+      "options": {
+        "orientation": "horizontal",
+        "displayMode": "stacked"
+      }
+    },
+    {
+      "type": "piechart",
+      "title": "Proporção de Status HTTP",
+      "datasource": "Prometheus",
+      "gridPos": { "x": 12, "y": 12, "w": 12, "h": 6 },
+      "targets": [
+        {
+          "expr": "sum by (status) (rate(http_requests_total[1m]))",
+          "legendFormat": "Status {{status}}",
+          "refId": "F"
+        }
+      ],
+      "options": {
+        "pieType": "donut",
+        "displayMode": "labels"
+      }
+    },
+    {
+      "type": "heatmap",
+      "title": "Mapa de Calor de Requisições",
+      "datasource": "Prometheus",
+      "gridPos": { "x": 0, "y": 18, "w": 12, "h": 6 },
+      "targets": [
+        {
+          "expr": "rate(http_requests_total[30s])",
+          "legendFormat": "{{instance}}",
+          "refId": "G"
+        }
+      ],
+      "color": {
+        "mode": "spectrum"
+      }
+    },
+    {
+      "type": "table",
+      "title": "Detalhes das Requisições",
+      "datasource": "Prometheus",
+      "gridPos": { "x": 12, "y": 18, "w": 12, "h": 6 },
+      "targets": [
+        {
+          "expr": "rate(http_requests_total[30s])",
+          "legendFormat": "Instância: {{instance}}",
+          "refId": "H"
+        }
+      ],
+      "options": {
+        "showHeader": true,
+        "wrapCellContent": true
+      }
     }
   ],
-  "refresh": "10s",
-  "time": {
-    "from": "now-1h",
-    "to": "now"
-  },
+  "refresh": "5s",
+  "time": { "from": "now-30m", "to": "now" },
   "overwrite": true
 }
